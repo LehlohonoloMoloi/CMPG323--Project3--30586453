@@ -15,20 +15,25 @@ namespace DeviceManagement_WebApp.Controllers
     {
         private readonly ConnectedOfficeContext _context;
         private readonly IDeviceRepository _deviceRepository;
+        private readonly IZoneRepository _zoneRepository;
+        private readonly ICategoryRepository _categoryRepository;
 
-        public DevicesController(ConnectedOfficeContext context, IDeviceRepository deviceRepository)
+        public DevicesController(ConnectedOfficeContext context, IDeviceRepository deviceRepository, IZoneRepository zoneRepository, ICategoryRepository categoryRepository)
         {
             _context = context;
             _deviceRepository = deviceRepository;
+            _zoneRepository = zoneRepository;
+            _categoryRepository = categoryRepository;
         }
 
+        //Get all devices in the database
         // GET: Devices
         public async Task<IActionResult> Index()
         {
-            //var connectedOfficeContext = _context.Device.Include(d => d.Category).Include(d => d.Zone);
             return View(_deviceRepository.GetAll());
         }
 
+        //Get a specific device in the database
         // GET: Devices/Details/5
         public async Task<IActionResult> Details(Guid? id)
         {
@@ -36,11 +41,7 @@ namespace DeviceManagement_WebApp.Controllers
             {
                 return NotFound();
             }
-
-            var device = await _context.Device
-                .Include(d => d.Category)
-                .Include(d => d.Zone)
-                .FirstOrDefaultAsync(m => m.DeviceId == id);
+            var device = _deviceRepository.GetById(id);
             if (device == null)
             {
                 return NotFound();
@@ -49,6 +50,7 @@ namespace DeviceManagement_WebApp.Controllers
             return View(device);
         }
 
+        //Create a device in the database
         // GET: Devices/Create
         public IActionResult Create()
         {
@@ -57,6 +59,7 @@ namespace DeviceManagement_WebApp.Controllers
             return View();
         }
 
+        //Create a device in the database
         // POST: Devices/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to, for 
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
@@ -65,13 +68,13 @@ namespace DeviceManagement_WebApp.Controllers
         public async Task<IActionResult> Create([Bind("DeviceId,DeviceName,CategoryId,ZoneId,Status,IsActive,DateCreated")] Device device)
         {
             device.DeviceId = Guid.NewGuid();
-            _context.Add(device);
-            await _context.SaveChangesAsync();
+            _deviceRepository.Add(device); 
             return RedirectToAction(nameof(Index));
 
 
         }
 
+        //Edit a device in the database
         // GET: Devices/Edit/5
         public async Task<IActionResult> Edit(Guid? id)
         {
@@ -80,16 +83,17 @@ namespace DeviceManagement_WebApp.Controllers
                 return NotFound();
             }
 
-            var device = await _context.Device.FindAsync(id);
+            var device = _deviceRepository.GetById(id);
             if (device == null)
             {
-                return NotFound();
+                return NotFound();  
             }
             ViewData["CategoryId"] = new SelectList(_context.Category, "CategoryId", "CategoryName", device.CategoryId);
             ViewData["ZoneId"] = new SelectList(_context.Zone, "ZoneId", "ZoneName", device.ZoneId);
             return View(device);
         }
 
+        //Edit a device in the database
         // POST: Devices/Edit/5
         // To protect from overposting attacks, enable the specific properties you want to bind to, for 
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
@@ -101,26 +105,12 @@ namespace DeviceManagement_WebApp.Controllers
             {
                 return NotFound();
             }
-            try
-            {
-                _context.Update(device);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!DeviceExists(device.DeviceId))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            _deviceRepository.Update(device);
             return RedirectToAction(nameof(Index));
 
         }
 
+        //Delete a device in the database
         // GET: Devices/Delete/5
         public async Task<IActionResult> Delete(Guid? id)
         {
@@ -128,11 +118,7 @@ namespace DeviceManagement_WebApp.Controllers
             {
                 return NotFound();
             }
-
-            var device = await _context.Device
-                .Include(d => d.Category)
-                .Include(d => d.Zone)
-                .FirstOrDefaultAsync(m => m.DeviceId == id);
+            var device = _categoryRepository.GetById(id);
             if (device == null)
             {
                 return NotFound();
@@ -141,20 +127,22 @@ namespace DeviceManagement_WebApp.Controllers
             return View(device);
         }
 
+        //Delete a device in the database
         // POST: Devices/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(Guid id)
         {
-            var device = await _context.Device.FindAsync(id);
-            _context.Device.Remove(device);
-            await _context.SaveChangesAsync();
+            var device = _deviceRepository.GetById(id);
+            _deviceRepository.Remove(device);
             return RedirectToAction(nameof(Index));
         }
 
+        //Check if a device exists in the database
         private bool DeviceExists(Guid id)
         {
-            return _context.Device.Any(e => e.DeviceId == id);
+            var device = _deviceRepository.GetById(id);
+            return device != null ? true : false;
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Linq.Expressions;
 using System;
 using DeviceManagement_WebApp.Data;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 
 namespace DeviceManagement_WebApp.Repository
 {
@@ -16,6 +17,19 @@ namespace DeviceManagement_WebApp.Repository
         public void Add(T entity)
         {
             _context.Set<T>().Add(entity);
+            _context.SaveChanges();
+        }
+        public void Update(T entity)
+        {
+            try
+            {
+                _context.Update(entity);
+                _context.SaveChanges();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw;
+            }
         }
         public void AddRange(IEnumerable<T> entities)
         {
@@ -33,9 +47,14 @@ namespace DeviceManagement_WebApp.Repository
         {
             return _context.Set<T>().Find(id);
         }
+        public T GetById(Guid? id)
+        {
+            return _context.Set<T>().Find(id);
+        }
         public void Remove(T entity)
         {
             _context.Set<T>().Remove(entity);
+            _context.SaveChanges();
         }
         public void RemoveRange(IEnumerable<T> entities)
         {
